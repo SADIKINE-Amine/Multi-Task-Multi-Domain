@@ -12,7 +12,7 @@ class VEELA_Dataset(Randomizable, CacheDataset):
         self,
         dataset_dir: PathLike,
         section: str,
-        anatomy: str = "Por",
+        anatomy: str = "por",
         transform: Union[Sequence[Callable], Callable] = (),
         seed: int = 0,
         val_frac: float = 0.2,
@@ -31,7 +31,7 @@ class VEELA_Dataset(Randomizable, CacheDataset):
 
         dataset_dir     = dataset_dir+"/"
 
-        self.datalist = self.datalist = [
+        self.datalist = [
         {"image": os.path.join(dataset_dir,"001-VE.nii.gz"), "label": os.path.join(dataset_dir,"001-VE-"+str(self.anatomy)+".nii.gz")},
         {"image": os.path.join(dataset_dir,"002-VE.nii.gz"), "label": os.path.join(dataset_dir,"002-VE-"+str(self.anatomy)+".nii.gz")},
         {"image": os.path.join(dataset_dir,"003-VE.nii.gz"), "label": os.path.join(dataset_dir,"003-VE-"+str(self.anatomy)+".nii.gz")},
@@ -110,7 +110,7 @@ class IRCAD_Dataset(Randomizable, CacheDataset):
         self,
         dataset_dir: PathLike,
         section: str,
-        anatomy: str        = "Por",
+        anatomy: str,
         transform: Union[Sequence[Callable], Callable] = (),
         seed: int           = 0,
         val_frac: float     = 0.2,
@@ -186,7 +186,7 @@ class IRCAD_Dataset(Randomizable, CacheDataset):
         else:
             raise ValueError(f"Unsupported section: {self.section}, ""available options are ['training', 'validation', 'test'].")
 
-        return [datalist[i] for i in self.indices]
+        return [self.datalist[i] for i in self.indices]
 
 
 

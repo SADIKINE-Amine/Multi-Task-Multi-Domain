@@ -4,13 +4,12 @@ import  tempfile
 import  matplotlib.pyplot       as plt
 import  numpy                   as np
 from    model                   import Model
-from    monai.data              import Dataset, list_data_collate
+from    monai.data              import list_data_collate
 from    torch.utils.data        import DataLoader
 from    ipdb                    import set_trace
 from    transforms              import Deftransforms
 import  torch
 from    arguments               import get_args
-from    datasets                import VEELA_Dataset
 from    monai.apps              import CrossValidation
 import  logging
 from    Inference               import prediction

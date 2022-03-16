@@ -11,7 +11,7 @@ def get_args():
 
     parser.add_argument('-dp',      '--DataPath',           type=str,       default= "/home/sadikine/data/PreVEELA",          dest='DataPath')
 
-    parser.add_argument('-k',       '--anatomy_target',     type=list,      default=['Por'],            dest='anatomy_target')
+    parser.add_argument('-k',       '--anatomy_target',     type=str,      default="por",            dest='anatomy_target')
 
     parser.add_argument('-lbb',     '--generate_lbb',       type=bool,      default=False,              dest='generate_lbb')
 

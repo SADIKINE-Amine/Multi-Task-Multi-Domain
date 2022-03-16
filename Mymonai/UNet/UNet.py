@@ -209,6 +209,7 @@ class UNet(nn.Module):
                 subunits=self.num_res_units,
                 act=self.act,
                 norm=self.norm,
+                num_domains=self.num_domains,
                 dropout=self.dropout,
                 bias=self.bias,
             )
@@ -221,6 +222,7 @@ class UNet(nn.Module):
             kernel_size=self.kernel_size,
             act=self.act,
             norm=self.norm,
+            num_domains=self.num_domains,
             dropout=self.dropout,
             bias=self.bias,
         )
@@ -284,14 +286,17 @@ class UNet(nn.Module):
         return x
 
 if __name__ == "__main__":
+    from torchsummary import summary
     model = UNet(
         spatial_dims=3,
-        in_channels=1,
+        in_channels=2,
         out_channels=1,
         channels=(16,32,64,128,256),
         strides = (2,2,2,2),
-        num_domains=6
+        num_domains=2
     )
+    x=torch.rand(1,2,96,96,96)
+    model(x)
     set_trace()
 
 

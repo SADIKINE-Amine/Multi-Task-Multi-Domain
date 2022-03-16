@@ -15,11 +15,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from monai.networks.blocks import ADN
+from networks_blocks import ADN
 from monai.networks.layers.convutils import same_padding, stride_minus_kernel_padding
 from monai.networks.layers.factories import Conv
 from monai.utils.deprecate_utils import deprecated_arg
-
+from ipdb import set_trace
 
 class Convolution(nn.Sequential):
     """
@@ -110,6 +110,7 @@ class Convolution(nn.Sequential):
         adn_ordering: str = "NDA",
         act: Optional[Union[Tuple, str]] = "PRELU",
         norm: Optional[Union[Tuple, str]] = "INSTANCE",
+        num_domains: Optional[int] = 2,
         dropout: Optional[Union[Tuple, str, float]] = None,
         dropout_dim: Optional[int] = 1,
         dilation: Union[Sequence[int], int] = 1,
@@ -160,6 +161,7 @@ class Convolution(nn.Sequential):
         self.add_module("conv", conv)
 
         if not conv_only:
+            # set_trace()
             self.add_module(
                 "adn",
                 ADN(
@@ -167,11 +169,13 @@ class Convolution(nn.Sequential):
                     in_channels=out_channels,
                     act=act,
                     norm=norm,
+                    num_domains=num_domains,
                     norm_dim=self.dimensions,
                     dropout=dropout,
                     dropout_dim=dropout_dim,
                 ),
             )
+
 
 
 class ResidualUnit(nn.Module):
@@ -263,6 +267,7 @@ class ResidualUnit(nn.Module):
         adn_ordering: str = "NDA",
         act: Optional[Union[Tuple, str]] = "PRELU",
         norm: Optional[Union[Tuple, str]] = "INSTANCE",
+        num_domains: Optional[int] = 2,
         dropout: Optional[Union[Tuple, str, float]] = None,
         dropout_dim: Optional[int] = 1,
         dilation: Union[Sequence[int], int] = 1,
@@ -294,6 +299,7 @@ class ResidualUnit(nn.Module):
                 adn_ordering=adn_ordering,
                 act=act,
                 norm=norm,
+                num_domains= num_domains,
                 dropout=dropout,
                 dropout_dim=dropout_dim,
                 dilation=dilation,
