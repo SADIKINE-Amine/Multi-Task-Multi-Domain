@@ -54,6 +54,7 @@ class get_norm_layer(nn.Module):
         channels: Optional[int] = 1, 
         num_domains: Optional[int] = 2):
 
+        self.num_domains = num_domains
         super(get_norm_layer, self).__init__()
         norm_name, norm_args = split_args(name)
         norm_type = Norm[norm_name, spatial_dims]
@@ -62,19 +63,24 @@ class get_norm_layer(nn.Module):
             kw_args["num_features"] = channels
         if has_option(norm_type, "num_channels") and "num_channels" not in kw_args:
             kw_args["num_channels"] = channels
-        self.norm = nn.ModuleList([norm_type(**kw_args) for _ in range(num_domains)])
+        self.norm = nn.ModuleList([norm_type(**kw_args) for _ in range(self.num_domains)])
     def forward(self, x):
+        bs = x.shape[0]
+        mini_bs= int(bs/self.num_domains)
+        a=0
+        b=mini_bs
         for i, N in enumerate(self.norm):
-            print(x.shape)
-            # print(torch.unsqueeze(x[:,i,:,:], dim=1))
-            x[:,:,:,:,:]=N(unsqueeze(x[:,:,:,:,:], dim=0))[:,:,:,:,:]
+            if i!=0:
+                a=b
+                b=(i+1)*b 
+            x[a:b,:,:,:,:]=N(x[a:b,:,:,:,:])
         return x
 
 if __name__ == "__main__":
     import torch
-    y=torch.rand(2,1,5,5)
-    x=torch.cat((y,y),1)
-    print(x)
-    N=get_norm_layer(name="batch",spatial_dims=2, channels=1, num_domains=2)
-    print(N(x))
-    set_trace()
+    x=torch.rand(4,1,5,5,5)
+    #x=torch.cat((y,y),0)
+    # print(x)
+    N=get_norm_layer(name="batch",spatial_dims=3, channels=1, num_domains=2)
+    N(x)
+    # set_trace()
