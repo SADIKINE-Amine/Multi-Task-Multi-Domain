@@ -1,7 +1,0 @@
-Network name                    : Unet
-Data name                       : ['IRCAD', 'VEELA']
-Spatial size                    : (96, 96, 96)
-Epochs                          : 50
-Batch size                      : 2
-Learning rate                   : 0.001000
-Loss                            : DiceCldiceLoss
