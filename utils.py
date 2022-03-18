@@ -33,6 +33,7 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
         logging.info('='*20)
         logging.info(f'epoch {epoch + 1}/{epochs}')
         model.train()
+        model.multi_domain_par['state']=True
         epoch_loss  = 0
         step        = 0
         for batch_data in train_loader:
@@ -40,9 +41,11 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
             inputs, labels  = batch_data["image"].to(device), batch_data["label"].to(device)
             optimizer.zero_grad()
             outputs         = model(inputs)
+            set_trace()
             loss            = loss_function(outputs, labels)
             loss.backward()
             optimizer.step()
+            # set_trace()
             epoch_loss      += loss.item()
             epoch_len        = len(train_ds) // train_loader.batch_size
         epoch_loss /= step
@@ -69,24 +72,31 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
 
 def eval_net(model,loader, loss_function, device):
     model.eval()
+    model.multi_domain_par['state']=False
     epoch_loss  = 0
     step        = 0
+    T_metric    = 0
+    T_epoch_loss= 0
     with torch.no_grad():
-        for data in loader:
-            step           += 1
-            images, labels  = data["image"].to(device), data["label"].to(device)
-            outputs         = model(images)
-            loss            = loss_function(outputs, labels)
-            outputs         = [post_trans(i) for i in decollate_batch(outputs)]
-            epoch_loss      += loss.item()
-            # compute metric for current iteration
-            dice_metric(y_pred=outputs, y=labels)
-        epoch_loss /= step
-        # aggregate the final mean dice result
-        metric = dice_metric.aggregate().item()
-        # reset the status for next validation round
-        dice_metric.reset()
-    return {'metric':metric, 'loss':epoch_loss}
+        for idx, Signle_Source_loader in enumerate(loader):
+            model.multi_domain_par["domain_id"]=idx
+            for data in loader:
+                step           += 1
+                images, labels  = data["image"].to(device), data["label"].to(device)
+                outputs         = model(images)
+                loss            = loss_function(outputs, labels)
+                outputs         = [post_trans(i) for i in decollate_batch(outputs)]
+                epoch_loss      += loss.item()
+                # compute metric for current iteration
+                dice_metric(y_pred=outputs, y=labels)
+            epoch_loss /= step
+            # aggregate the final mean dice result
+            metric = dice_metric.aggregate().item()
+            # reset the status for next validation round
+            dice_metric.reset()
+            T_metric        += metric
+            T_epoch_loss    += epoch_loss
+    return {'metric':T_metric/len(loader), 'loss':T_epoch_loss/len(loader)}
 
 def Plot_Curves(epoch_loss_values, epoch_val_loss_values, metric_values, output_2_save):
     
@@ -112,7 +122,7 @@ def Plot_Curves(epoch_loss_values, epoch_val_loss_values, metric_values, output_
     plt.savefig(output_2_save+'/'+'Val_dices.png')
     plt.close()
 
-def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target=['Por'], size=(96,96,96), Path2Save="/home/sadikine/data/PreVEELA"):
+def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target='por', size=(96,96,96), Path2Save="/home/sadikine/data/PreVEELA"):
     """
     LBBV:Liver Bounding Box Volume
     Read volumes of interest after applying a bounding box around the liver as nii file.
@@ -130,6 +140,7 @@ def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target=['Por'], size=(96,96,
         info_dict = IRCAD_DIC().data_dict
     else:
         raise ValueError("Check the name of datset ;)")
+    key_target=[key_target]
     key_target.append('VE')
     make_dir(Path2Save)
     logging.info("Genarating Liver Bounding Box Volume for {} dataset...".format(DatasetName))

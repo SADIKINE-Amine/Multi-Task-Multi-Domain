@@ -1,7 +1,7 @@
 import  argparse
 
 ANATOMIES={"IRCAD":"por","VEELA":"por"}
-DATASER_DIR={"IRCAD":"/home/sadikine/data/IRCAD/data","VEELA":"/home/sadikine/data/VEELA"}
+DATASER_DIR={"IRCAD":"/home/sadikine/data/Pre_IRCAD","VEELA":"/home/sadikine/data/Pre_VEELA"}
 MULTI_DOMAIN={"num_domains": 2, "state": True, "domain_id": 1}# state True for train and validation/ False for testing if Flase need to choose which domain_id
 
 def get_args():
@@ -18,7 +18,7 @@ def get_args():
 
     parser.add_argument('-md',       '--multi_domain',      type=dict,      default=MULTI_DOMAIN,           dest='multi_domain')
 
-    parser.add_argument('-nm',       '--norm',              type=str,      default="IN",                    dest='multi_domain')#IN (instance norm), BN (batch norm)
+    parser.add_argument('-nm',       '--norm',              type=str,      default="IN",                    dest='norm')#IN (instance norm), BN (batch norm)
 
     parser.add_argument('-lbb',     '--generate_lbb',       type=bool,      default=False,                  dest='generate_lbb')
 
@@ -38,7 +38,7 @@ def get_args():
         
     parser.add_argument('-de',      '--decay',              type=float,     default=0.,                     dest='decay')
     
-    parser.add_argument('-s',       '--spatial_size',       type=int,       default=(256, 256, 128),        dest='spatial_size')
+    parser.add_argument('-s',       '--spatial_size',       type=int,       default=(96, 96, 96),        dest='spatial_size')
 
     parser.add_argument('-sp',      '--spacing',            type=list,      default=None,                   dest='spacing')
     

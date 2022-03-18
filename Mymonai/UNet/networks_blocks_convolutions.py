@@ -21,6 +21,8 @@ from monai.networks.layers.factories import Conv
 from monai.utils.deprecate_utils import deprecated_arg
 from ipdb import set_trace
 
+__all__ = ["Convolution", "ResidualUnit"]
+
 class Convolution(nn.Sequential):
     """
     Constructs a convolution with normalization, optional dropout, and optional activation layers::

@@ -80,9 +80,10 @@ class get_norm_layer(nn.Module):
                 if i!=0:
                     a=b
                     b=(i+1)*b 
-                x[a:b,:,:,:,:]=N(x[a:b,:,:,:,:])
+                N(x[a:b,:,:,:,:])#x[a:b,:,:,:,:]=N(x[a:b,:,:,:,:])
             return x
         else:
+            print(self.multi_domain_par["domain_id"])
             return self.norm[self.multi_domain_par["domain_id"]](x)
 
         

@@ -30,10 +30,10 @@ class VEELA_DIC:
                 self.append_value_to_dict(data_dict=self.data_dict, key='Liver coordinates', value=self.liver_bounding_box(nib.as_closest_canonical(nib.load(VE_liv_path)).get_fdata()))
             if self.load_VE_por:
                 VE_por_path        = self.data_path+ '/'+ '%0*d'%(3,id_)+'-VE-por.nii.gz'
-                self.append_value_to_dict(data_dict=self.data_dict, key='Por', value=VE_por_path)
+                self.append_value_to_dict(data_dict=self.data_dict, key='por', value=VE_por_path)
             if self.load_VE_hep:
                 VE_hep_path        = self.data_path+ '/'+ '%0*d'%(3,id_)+'-VE-hep.nii.gz'
-                self.append_value_to_dict(data_dict=self.data_dict, key='Hep', value=VE_hep_path)
+                self.append_value_to_dict(data_dict=self.data_dict, key='hep', value=VE_hep_path)
 
     def append_value_to_dict(self,data_dict, key, value):
         # Check if key exist in dict or not
@@ -74,10 +74,10 @@ class IRCAD_DIC:
                 self.append_value_to_dict(data_dict=self.data_dict, key='Liver coordinates', value=self.liver_bounding_box(nib.as_closest_canonical(nib.load(VE_liv_path)).get_fdata()))
             if self.load_VE_por:
                 VE_por_path        = self.data_path+ '/'+ '%0*d'%(2,id_)+'-VE-por.nii.gz'
-                self.append_value_to_dict(data_dict=self.data_dict, key='Por', value=VE_por_path)
+                self.append_value_to_dict(data_dict=self.data_dict, key='por', value=VE_por_path)
             if self.load_VE_hep:
                 VE_hep_path        = self.data_path+ '/'+ '%0*d'%(2,id_)+'-VE-hep.nii.gz'
-                self.append_value_to_dict(data_dict=self.data_dict, key='Hep', value=VE_hep_path)
+                self.append_value_to_dict(data_dict=self.data_dict, key='hep', value=VE_hep_path)
 
     def append_value_to_dict(self,data_dict, key, value):
         # Check if key exist in dict or not

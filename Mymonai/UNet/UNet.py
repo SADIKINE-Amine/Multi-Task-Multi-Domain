@@ -8,20 +8,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import warnings
 from typing import Optional, Sequence, Tuple, Union, Dict
 
 import torch
 import torch.nn as nn
-
-from networks_blocks_convolutions import Convolution, ResidualUnit
 from monai.networks.layers.factories import Act, Norm
 from monai.networks.layers.simplelayers import SkipConnection
 from monai.utils import deprecated_arg
 from ipdb import set_trace
+import sys
 
-__all__ = ["UNet", "Unet"]
+sys.path.append("/home/sadikine/code/Multi-Task-Multi-Domain/Mymonai/UNet")
+from networks_blocks_convolutions import Convolution, ResidualUnit
+
+__all__ = ["UNet"]
 
 class UNet(nn.Module):
     """
@@ -175,11 +176,9 @@ class UNet(nn.Module):
 
             subblock: nn.Module
             if len(channels) > 2:
-                set_trace()
                 subblock = _create_block(c, c, channels[1:], strides[1:], False)  # continue recursion down
                 upc = c * 2
             else:
-                set_trace()
                 # the next layer is the bottom so stop recursion, create the bottom layer as the sublock for this layer
                 subblock = self._get_bottom_layer(c, channels[1])
                 upc = c + channels[1]
@@ -287,19 +286,19 @@ class UNet(nn.Module):
         x = self.model(x)
         return x
 
-if __name__ == "__main__":
-    from torchsummary import summary
-    model = UNet(
-        spatial_dims=3,
-        in_channels=2,
-        out_channels=1,
-        channels=(16, 32, 64),
-        strides = (2,2),
-        multi_domain_par={"num_domains": 2, "state": True}
-    )
-    x=torch.rand(1,2,96,96,96)
-    model(x)
-    set_trace()
+# if __name__ == "__main__":
+#     from torchsummary import summary
+#     model = UNet(
+#         spatial_dims=3,
+#         in_channels=2,
+#         out_channels=1,
+#         channels=(16, 32, 64),
+#         strides = (2,2),
+#         multi_domain_par={"num_domains": 2, "state": True}
+#     )
+#     x=torch.rand(1,2,96,96,96)
+#     model(x)
+#     set_trace()
 
 
 
