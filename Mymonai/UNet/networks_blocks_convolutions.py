@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union, Dict
 
 import numpy as np
 import torch
@@ -110,7 +110,7 @@ class Convolution(nn.Sequential):
         adn_ordering: str = "NDA",
         act: Optional[Union[Tuple, str]] = "PRELU",
         norm: Optional[Union[Tuple, str]] = "INSTANCE",
-        num_domains: Optional[int] = 2,
+        multi_domain_par: Dict = {},
         dropout: Optional[Union[Tuple, str, float]] = None,
         dropout_dim: Optional[int] = 1,
         dilation: Union[Sequence[int], int] = 1,
@@ -161,7 +161,6 @@ class Convolution(nn.Sequential):
         self.add_module("conv", conv)
 
         if not conv_only:
-            # set_trace()
             self.add_module(
                 "adn",
                 ADN(
@@ -169,7 +168,7 @@ class Convolution(nn.Sequential):
                     in_channels=out_channels,
                     act=act,
                     norm=norm,
-                    num_domains=num_domains,
+                    multi_domain_par=multi_domain_par,
                     norm_dim=self.dimensions,
                     dropout=dropout,
                     dropout_dim=dropout_dim,
@@ -267,7 +266,7 @@ class ResidualUnit(nn.Module):
         adn_ordering: str = "NDA",
         act: Optional[Union[Tuple, str]] = "PRELU",
         norm: Optional[Union[Tuple, str]] = "INSTANCE",
-        num_domains: Optional[int] = 2,
+        multi_domain_par: Dict = {},
         dropout: Optional[Union[Tuple, str, float]] = None,
         dropout_dim: Optional[int] = 1,
         dilation: Union[Sequence[int], int] = 1,
@@ -299,7 +298,7 @@ class ResidualUnit(nn.Module):
                 adn_ordering=adn_ordering,
                 act=act,
                 norm=norm,
-                num_domains= num_domains,
+                multi_domain_par=multi_domain_par,
                 dropout=dropout,
                 dropout_dim=dropout_dim,
                 dilation=dilation,

@@ -10,7 +10,7 @@
 # limitations under the License.
 
 import warnings
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union, Dict
 
 import torch
 import torch.nn as nn
@@ -118,7 +118,7 @@ class UNet(nn.Module):
         num_res_units: int = 0,
         act: Union[Tuple, str] = Act.PRELU,
         norm: Union[Tuple, str] = Norm.INSTANCE,
-        num_domains: Optional[int] = 3,
+        multi_domain_par: Dict = {"num_domains": 2, "state": True, "domain_id": 1}, #state is False for inference to use one domaine
         dropout: float = 0.0,
         bias: bool = True,
         dimensions: Optional[int] = None,
@@ -154,7 +154,8 @@ class UNet(nn.Module):
         self.norm = norm
         self.dropout = dropout
         self.bias = bias
-        self.num_domains=num_domains
+        self.multi_domain_par=multi_domain_par
+
         def _create_block(
             inc: int, outc: int, channels: Sequence[int], strides: Sequence[int], is_top: bool
         ) -> nn.Sequential:
@@ -173,17 +174,18 @@ class UNet(nn.Module):
             s = strides[0]
 
             subblock: nn.Module
-
             if len(channels) > 2:
+                set_trace()
                 subblock = _create_block(c, c, channels[1:], strides[1:], False)  # continue recursion down
                 upc = c * 2
             else:
+                set_trace()
                 # the next layer is the bottom so stop recursion, create the bottom layer as the sublock for this layer
                 subblock = self._get_bottom_layer(c, channels[1])
                 upc = c + channels[1]
 
             down = self._get_down_layer(inc, c, s, is_top)  # create layer in downsampling path
-            up = self._get_up_layer(upc, outc, s, is_top)  # create layer in upsampling path
+            up = self._get_up_layer(upc, outc, s, is_top)   # create layer in upsampling path
 
             return nn.Sequential(down, SkipConnection(subblock), up)
 
@@ -209,7 +211,7 @@ class UNet(nn.Module):
                 subunits=self.num_res_units,
                 act=self.act,
                 norm=self.norm,
-                num_domains=self.num_domains,
+                multi_domain_par=self.multi_domain_par,
                 dropout=self.dropout,
                 bias=self.bias,
             )
@@ -222,7 +224,7 @@ class UNet(nn.Module):
             kernel_size=self.kernel_size,
             act=self.act,
             norm=self.norm,
-            num_domains=self.num_domains,
+            multi_domain_par=self.multi_domain_par,
             dropout=self.dropout,
             bias=self.bias,
         )
@@ -237,6 +239,7 @@ class UNet(nn.Module):
         return self._get_down_layer(in_channels, out_channels, 1, False)
 
     def _get_up_layer(self, in_channels: int, out_channels: int, strides: int, is_top: bool) -> nn.Module:
+
         """
         Args:
             in_channels: number of input channels.
@@ -254,7 +257,7 @@ class UNet(nn.Module):
             kernel_size=self.up_kernel_size,
             act=self.act,
             norm=self.norm,
-            num_domains=self.num_domains,
+            multi_domain_par=self.multi_domain_par,
             dropout=self.dropout,
             bias=self.bias,
             conv_only=is_top and self.num_res_units == 0,
@@ -271,13 +274,12 @@ class UNet(nn.Module):
                 subunits=1,
                 act=self.act,
                 norm=self.norm,
-                num_domains=self.num_domains,
+                multi_domain_par=self.multi_domain_par,
                 dropout=self.dropout,
                 bias=self.bias,
                 last_conv_only=is_top,
             )
             conv = nn.Sequential(conv, ru)
-
         return conv
 
 
@@ -291,9 +293,9 @@ if __name__ == "__main__":
         spatial_dims=3,
         in_channels=2,
         out_channels=1,
-        channels=(16,32,64,128,256),
-        strides = (2,2,2,2),
-        num_domains=2
+        channels=(16, 32, 64),
+        strides = (2,2),
+        multi_domain_par={"num_domains": 2, "state": True}
     )
     x=torch.rand(1,2,96,96,96)
     model(x)

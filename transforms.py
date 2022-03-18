@@ -19,10 +19,13 @@ from monai.transforms 		import (
 								    RandShiftIntensityd,
 								    ToTensord)
 
-def Deftransforms(Dataset='VEELA'):
+from    typing              import  List
 
-	if Dataset=='VEELA':
-	    train_transforms = Compose(
+def Deftransforms(Datsets: List):
+	TrTransformsDict    =  {}
+	ValTransformsDict   =  {}
+	if "VEELA" in Datsets:
+	    TrTransformsDict["VEELA"] = Compose(
 							[
 					        LoadImaged(keys=["image", "label"]),
 					        AddChanneld(keys=["image", "label"]),
@@ -43,7 +46,7 @@ def Deftransforms(Dataset='VEELA'):
 					        ToTensord(keys=["image", "label"]),
 					    	]
 						    )
-	    val_transforms = Compose(
+	    ValTransformsDict["VEELA"] = Compose(
 				    		[
 					        LoadImaged(keys=["image", "label"]),
 					        AddChanneld(keys=["image", "label"]),
@@ -52,8 +55,11 @@ def Deftransforms(Dataset='VEELA'):
 					        ToTensord(keys=["image", "label"])
 							]
 							)
-	elif Dataset=='IRCAD':
-	    train_transforms = Compose(
+	else:
+		raise ValueError("VEELA don't exist in datsets list")
+
+	if "IRCAD" in Datsets:
+	    TrTransformsDict["IRCAD"] = Compose(
 							[
 					        LoadImaged(keys=["image", "label"]),
 					        AddChanneld(keys=["image", "label"]),
@@ -77,7 +83,7 @@ def Deftransforms(Dataset='VEELA'):
 					        ToTensord(keys=["image", "label"]),
 					    	]
 						    )
-	    val_transforms = Compose(
+	    ValTransformsDict["IRCAD"] = Compose(
 				    		[
 					        LoadImaged(keys=["image", "label"]),
 					        AddChanneld(keys=["image", "label"]),
@@ -87,6 +93,6 @@ def Deftransforms(Dataset='VEELA'):
 							]
 							)
 	else:
-		raise ValueError("Check the name of datset ;)")
+		raise ValueError("IRCAD don't exist in datsets list")
 
-	return train_transforms, val_transforms
+	return {"training":TrTransformsDict, "validation":ValTransformsDict}

@@ -188,6 +188,26 @@ class IRCAD_Dataset(Randomizable, CacheDataset):
 
         return [self.datalist[i] for i in self.indices]
 
+def MultiSourceDataset(Datsets: List, dataset_dir: PathLike, section: str, anatomy: Dict, transform: Dict):
+    
+    from torch.utils.data.dataset import ConcatDataset
+    
+    DataDict    =  {}
+
+    if "VEELA" in Datsets:
+        DataDict["VEELA"]=VEELA_Dataset(dataset_dir=dataset_dir["VEELA"], section=section, anatomy=anatomy["VEELA"], transform=transform[section]["VEELA"])
+    else:
+        raise ValueError("VEELA don't exist in datsets list")
+    if "IRCAD" in Datsets:
+        DataDict["IRCAD"]=IRCAD_Dataset(dataset_dir=dataset_dir["IRCAD"], section=section, anatomy=anatomy["IRCAD"], transform=transform[section]["IRCAD"])
+    else:
+        raise ValueError("IRCAD don't exist in datsets list")
+
+    return ConcatDataset([DataDict[Datsets_name] for Datsets_name in Datsets])
+
+
+
+
 
 
 

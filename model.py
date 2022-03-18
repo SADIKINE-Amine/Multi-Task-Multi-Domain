@@ -1,8 +1,16 @@
-from monai.networks.nets import UNETR, UNet
+from Mymonai.UNet import UNet
+from monai.networks.layers.factories import Norm
 
-
-def Model(model_name, device, size):
+def Model(model_name, device, size, norm, multi_domain_par):
 #model_name: - Unet / - Unetr
+	
+	if norm=="IN": # instance normalization
+		NORM=Norm.INSTANCE
+	elif norm=="BN": # batch normalization
+		NORM=Norm.BATCH
+	else:
+		raise ValueError("Check the name of Norm")
+
 	if model_name=="Unet":	
 		model = UNet(
 		    spatial_dims=3,
@@ -10,6 +18,8 @@ def Model(model_name, device, size):
 		    out_channels=1,
 		    channels=(16,32,64,128,256),
 		    strides = (2,2,2,2),
+		    norm= NORM,
+		    multi_domain_par=multi_domain_par,
 		).to(device)
 	elif model_name=="ResUnet":	
 		model = UNet(
@@ -19,34 +29,8 @@ def Model(model_name, device, size):
 		    channels=(16,32,64,128,256),
 		    strides = (2,2,2,2),
 		    num_res_units=4,
-		).to(device)
-	elif model_name=="UnetrV0":
-		model = UNETR(
-		    in_channels=1,
-		    out_channels=1,
-		    img_size=size,
-		    feature_size=8,
-		    hidden_size=768,
-		    mlp_dim=3072, 
-		    num_heads=16,
-		    pos_embed="perceptron",
-		    norm_name="instance",
-		    res_block=True,
-		    dropout_rate=0.0,
-		).to(device)
-	elif model_name=="Unetr":
-		model = UNETR(
-		    in_channels=1,
-		    out_channels=1,
-		    img_size=size,
-		    feature_size=16,
-		    hidden_size=768,
-		    mlp_dim=3072, 
-		    num_heads=12,
-		    pos_embed="perceptron",
-		    norm_name='batch',
-		    res_block=False,
-		    dropout_rate=0.0,
+		    norm= NORM,
+		    multi_domain_par=multi_domain_par,
 		).to(device)
 	else:
 		raise ValueError("Check the name of the model ;)")

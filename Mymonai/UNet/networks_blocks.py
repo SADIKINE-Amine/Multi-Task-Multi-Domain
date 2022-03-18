@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Dict
 
 import torch.nn as nn
 
@@ -74,7 +74,7 @@ class ADN(nn.Sequential):
         in_channels: Optional[int] = None,
         act: Optional[Union[Tuple, str]] = "RELU",
         norm: Optional[Union[Tuple, str]] = None,
-        num_domains: Optional[int] = 2,
+        multi_domain_par: Dict = {},
         norm_dim: Optional[int] = None,
         dropout: Optional[Union[Tuple, str, float]] = None,
         dropout_dim: Optional[int] = None,
@@ -86,7 +86,7 @@ class ADN(nn.Sequential):
         if norm is not None:
             if norm_dim is None and dropout_dim is None:
                 raise ValueError("norm_dim or dropout_dim needs to be specified.")
-            self.op_dict["N"] = get_norm_layer(name=norm, spatial_dims=norm_dim or dropout_dim, channels=in_channels, num_domains= num_domains)
+            self.op_dict["N"] = get_norm_layer(name=norm, spatial_dims=norm_dim or dropout_dim, channels=in_channels, multi_domain_par=multi_domain_par)
             # self.op_dict["N"] = self.op_dict["N"]
         # define the activation type and the arguments to the constructor
         if act is not None:
