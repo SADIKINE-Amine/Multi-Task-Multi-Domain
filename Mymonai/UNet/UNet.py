@@ -9,7 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import warnings
-from typing import Optional, Sequence, Tuple, Union, Dict
+from typing import Optional, Sequence, Tuple, Union, Dict, List
 
 import torch
 import torch.nn as nn
@@ -155,7 +155,7 @@ class UNet(nn.Module):
         self.norm = norm
         self.dropout = dropout
         self.bias = bias
-        self.multi_domain_par=multi_domain_par
+        self.multi_domain_par = multi_domain_par
 
         def _create_block(
             inc: int, outc: int, channels: Sequence[int], strides: Sequence[int], is_top: bool
@@ -182,21 +182,29 @@ class UNet(nn.Module):
                 # the next layer is the bottom so stop recursion, create the bottom layer as the sublock for this layer
                 subblock = self._get_bottom_layer(c, channels[1])
                 upc = c + channels[1]
+            # print("inc: ", inc)
+            # print("c: ", c)
+            # print("upc: ", upc)
+            # print(is_top)
+            # print("outc: ", outc)
+            down    = self._get_down_layer(inc, c, s)       #create layer in downsampling path
+            if is_top:
+                out_layers = nn.ModuleList([self._get_up_layer(upc, outc, s, is_top) for outc in self.out_channels])
 
-            down = self._get_down_layer(inc, c, s, is_top)  # create layer in downsampling path
-            up = self._get_up_layer(upc, outc, s, is_top)   # create layer in upsampling path
-
+                return nn.Sequential(down, SkipConnection(subblock)), out_layers
+            else:
+                up      = self._get_up_layer(upc, outc, s, is_top)      #create layer in upsampling path
+            
             return nn.Sequential(down, SkipConnection(subblock), up)
 
-        self.model = _create_block(in_channels, out_channels, self.channels, self.strides, True)
+        self.model, self.out_layers = _create_block(in_channels, out_channels, self.channels, self.strides, True)
 
-    def _get_down_layer(self, in_channels: int, out_channels: int, strides: int, is_top: bool) -> nn.Module:
+    def _get_down_layer(self, in_channels: int, out_channels: int, strides: int) -> nn.Module:
         """
         Args:
             in_channels: number of input channels.
             out_channels: number of output channels.
             strides: convolution stride.
-            is_top: True if this is the top block.
         """
         mod: nn.Module
         if self.num_res_units > 0:
@@ -235,7 +243,7 @@ class UNet(nn.Module):
             in_channels: number of input channels.
             out_channels: number of output channels.
         """
-        return self._get_down_layer(in_channels, out_channels, 1, False)
+        return self._get_down_layer(in_channels, out_channels, 1)
 
     def _get_up_layer(self, in_channels: int, out_channels: int, strides: int, is_top: bool) -> nn.Module:
 
@@ -284,7 +292,22 @@ class UNet(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.model(x)
-        return x
+        if self.multi_domain_par["state"]:
+            bs = x.shape[0]
+            logits_l = []
+            mini_bs= int(bs/self.multi_domain_par["num_domains"])
+            a=0
+            b=mini_bs
+            for i, logits in enumerate(self.out_layers):
+                if i!=0:
+                    a=b
+                    b=(i+1)*b 
+                logits_l.append(logits(x[a:b,:,:,:,:]))
+            return logits_l
+        else:
+            return self.out_layers[self.multi_domain_par["domain_id"]](x)
+
+
 
 # if __name__ == "__main__":
 #     from torchsummary import summary

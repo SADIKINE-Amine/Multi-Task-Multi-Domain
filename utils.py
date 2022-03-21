@@ -10,9 +10,9 @@ from    ipdb                import  set_trace
 from    monai.data          import  decollate_batch
 from    monai.metrics       import  DiceMetric
 from    monai.transforms    import  AsDiscrete, Activations, EnsureType, Compose
-import  matplotlib.pyplot   as plt
-from    scipy.ndimage       import zoom
-from    tqdm                import tqdm
+import  matplotlib.pyplot   as      plt
+from    scipy.ndimage       import  zoom
+from    tqdm                import  tqdm
 import  logging
 from    clDice.cldice       import soft_dice_cldice
 
@@ -23,7 +23,7 @@ post_trans  = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(thres
 
 def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr, epochs, device, spatial_size, output_2_save):
     optimizer         = torch.optim.Adam(model.parameters(), lr)
-    val_interval      = 1
+    val_interval      =  1
     best_metric       = -1
     best_metric_epoch = -1
     epoch_loss_values = list()
@@ -41,8 +41,7 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
             inputs, labels  = batch_data["image"].to(device), batch_data["label"].to(device)
             optimizer.zero_grad()
             outputs         = model(inputs)
-            set_trace()
-            loss            = loss_function(outputs, labels)
+            loss            = MultiDomainLossF(loss_function, outputs, labels)
             loss.backward()
             optimizer.step()
             # set_trace()
@@ -70,6 +69,19 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
     np.save(output_2_save+'/Val_dices.npy', np.array(metric_values))
     Plot_Curves(epoch_loss_values, epoch_val_loss_values, metric_values, output_2_save)
 
+def MultiDomainLossF(loss_function, outputs, labels):
+    Loss = 0
+    bs      = labels.shape[0]
+    mini_bs = int(bs/len(outputs))
+    a       = 0
+    b       = mini_bs
+    for i, output in enumerate(outputs):
+        if i!=0:
+            a=b
+            b=(i+1)*b 
+        Loss+=loss_function(output, labels[a:b,:,:,:,:])
+    return Loss/len(outputs)
+
 def eval_net(model,loader, loss_function, device):
     model.eval()
     model.multi_domain_par['state']=False
@@ -80,13 +92,13 @@ def eval_net(model,loader, loss_function, device):
     with torch.no_grad():
         for idx, Signle_Source_loader in enumerate(loader):
             model.multi_domain_par["domain_id"]=idx
-            for data in loader:
+            for data in Signle_Source_loader:
                 step           += 1
                 images, labels  = data["image"].to(device), data["label"].to(device)
                 outputs         = model(images)
                 loss            = loss_function(outputs, labels)
                 outputs         = [post_trans(i) for i in decollate_batch(outputs)]
-                epoch_loss      += loss.item()
+                epoch_loss     += loss.item()
                 # compute metric for current iteration
                 dice_metric(y_pred=outputs, y=labels)
             epoch_loss /= step

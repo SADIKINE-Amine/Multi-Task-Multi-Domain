@@ -83,7 +83,6 @@ class get_norm_layer(nn.Module):
                 N(x[a:b,:,:,:,:])#x[a:b,:,:,:,:]=N(x[a:b,:,:,:,:])
             return x
         else:
-            print(self.multi_domain_par["domain_id"])
             return self.norm[self.multi_domain_par["domain_id"]](x)
 
         
