@@ -41,6 +41,7 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
             inputs, labels  = batch_data["image"].to(device), batch_data["label"].to(device)
             optimizer.zero_grad()
             outputs         = model(inputs)
+            # set_trace()
             loss            = MultiDomainLossF(loss_function, outputs, labels)
             loss.backward()
             optimizer.step()

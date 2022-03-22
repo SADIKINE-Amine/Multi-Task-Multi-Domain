@@ -15,7 +15,7 @@ from monai.networks.layers.factories import Norm, split_args
 from monai.utils import has_option
 from  ipdb import set_trace
 import torch.nn as nn
-from torch import unsqueeze
+from torch import unsqueeze, tensor, cat, empty
 
 __all__ = ["get_norm_layer"]
 
@@ -37,7 +37,7 @@ __all__ = ["get_norm_layer"]
 #         spatial_dims: number of spatial dimensions of the input.
 #         channels: number of features/channels when the normalization layer requires this parameter
 #             but it is not specified in the norm parameters.
-#     """
+#     """x
 #     norm_name, norm_args = split_args(name)
 #     norm_type = Norm[norm_name, spatial_dims]
 #     kw_args = dict(norm_args)
@@ -70,18 +70,27 @@ class get_norm_layer(nn.Module):
             kw_args["num_channels"] = channels
         self.norm = nn.ModuleList([norm_type(**kw_args) for _ in range(self.num_domains)])
 
+
     def forward(self, x):
+
         if self.multi_domain_par["state"]:
+            # y=x
+            # x=x.clone()
+            z = []
             bs = x.shape[0]
             mini_bs= int(bs/self.num_domains)
             a=0
-            b=mini_bs
+            b=mini_bs            
             for i, N in enumerate(self.norm):
                 if i!=0:
                     a=b
-                    b=(i+1)*b 
-                N(x[a:b,:,:,:,:])#x[a:b,:,:,:,:]=N(x[a:b,:,:,:,:])
-            return x
+                    b=(i+1)*b
+                # print(a,b)
+                # set_trace() 
+                z.append(N(x[a:b]))#x[a:b,:,:,:,:]=N(x[a:b,:,:,:,:])
+                # set_trace()
+                # print(z[i][0,0,0,0,0]-y[0,0,0,0,0])
+            return cat(z, dim=0)
         else:
             return self.norm[self.multi_domain_par["domain_id"]](x)
 
