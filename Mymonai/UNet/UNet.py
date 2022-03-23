@@ -17,9 +17,11 @@ from monai.networks.layers.factories import Act, Norm
 from monai.networks.layers.simplelayers import SkipConnection
 from monai.utils import deprecated_arg
 from ipdb import set_trace
-import sys
+from sys import path
+from os import getcwd
 
-sys.path.append("/home/sadikine/code/Multi-Task-Multi-Domain/Mymonai/UNet")
+path.append(getcwd()+'/Mymonai/UNet')
+
 from networks_blocks_convolutions import Convolution, ResidualUnit
 
 __all__ = ["UNet"]

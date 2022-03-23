@@ -145,14 +145,8 @@ def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target='por', size=(96,96,96
     DatasetName     : VEELA or IRCAD
     key_target      : keys of segementation target (Por,Hep)
     """
-    if DatasetName      =="VEELA":
-        from data_dic import VEELA_DIC
-        info_dict = VEELA_DIC().data_dict
-    elif DatasetName    =="IRCAD":
-        from data_dic import IRCAD_DIC
-        info_dict = IRCAD_DIC().data_dict
-    else:
-        raise ValueError("Check the name of datset ;)")
+    info_dict = LoadDataSetDic(DatasetName)
+
     key_target=[key_target]
     key_target.append('VE')
     make_dir(Path2Save)
@@ -203,12 +197,18 @@ def make_dir(path):
     else:
         print ("Successfully created the directorie")
 
-def Extract_Ids_From_Dic(dic):
-    ids = []
-    for i in np.arange(len(dic)):
-        id_= int(dic[i]['image'].split('/')[-1].split('-')[0])
-        ids.append(id_)
-    return ids
+def Extract_Ids_From_DS(Datsets, Ds):
+    IdsDict = {}
+    for idx, single_dataset in enumerate(Ds.datasets):
+        ids     = []
+        dic=single_dataset.data
+        data_name= Datsets[idx]
+        for i in np.arange(len(dic)):
+            id_= int(dic[i]['image'].split('/')[-1].split('-')[0])
+            ids.append(id_)
+        # ids.sort()
+        IdsDict[data_name]=ids
+    return IdsDict
 
 def printF(P):
     M=[]
@@ -259,6 +259,26 @@ def print_ods(scores, test_ids, output, name):
         resfile.write(str('%.3f' % np.std(scores[:, idx])).replace(".", ",") + '\t')
     resfile.write('\n')
     resfile.close()
+
+def LoadDataSetDic(DataName, ids=[]):
+
+    if DataName      =="VEELA":
+        from data_dic import VEELA_DIC
+        if ids==[]:
+            info_dict = VEELA_DIC.data_dict
+        else:
+            info_dict = VEELA_DIC(ids=ids).data_dict
+    elif DataName    =="IRCAD":
+        from data_dic import IRCAD_DIC
+        if ids==[]:
+            info_dict = IRCAD_DIC.data_dict
+        else:
+            info_dict = IRCAD_DIC(ids=ids).data_dict
+    else:
+        raise ValueError("Check the name of datset ;)")
+
+    return info_dict
+
 
 def load_checkpoint(filepath, net, device):
     checkpoint = torch.load(filepath, map_location= device)

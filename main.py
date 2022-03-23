@@ -14,7 +14,7 @@ from    monai.apps              import CrossValidation
 import  logging
 from    Inference               import prediction
 from    BatchSchedulerSampler   import BatchSchedulerSampler
-from    utils                   import (Extract_Ids_From_Dic, 
+from    utils                   import (Extract_Ids_From_DS, 
                                         Save_Experement_Info, 
                                         Genarate_LBBV_Dataset, print_ods,
                                         Add_Path_2_DataName, LossFunction, 
@@ -54,7 +54,16 @@ if __name__ == "__main__":
         val_ds          = MultiSourceDataset(Datsets=args.DatasetName, dataset_dir=args.DataPath, section="validation", anatomy=args.anatomy_target, transform=Deftransforms(args.DatasetName))
         val_loader      = MultiSourceLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4, collate_fn=list_data_collate)
         model           = Model(args.ModelName, device, args.spatial_size, args.norm, args.multi_domain)
-        # set_trace()
         Train(train_loader, train_ds, val_loader, val_ds, model, loss_function, args.lr, args.epochs, device, args.spatial_size, args.output_2_save)
         del train_loader, val_loader, train_ds, val_ds
+
+        #======================================| Test stage |===================================================
+
+        best_model_path = args.output_2_save +"/best_metric_model_dict.pth"
+        best_model      = load_checkpoint(best_model_path, model, device)
+        test_ds         = MultiSourceDataset(Datsets=args.DatasetName, dataset_dir=args.DataPath, section="test", anatomy=args.anatomy_target, transform=Deftransforms(args.DatasetName))
+        test_loader     = MultiSourceLoader(test_ds, batch_size=1, shuffle=False, num_workers=4, collate_fn=list_data_collate)
+        ids             = Extract_Ids_From_DS(Datsets=args.DatasetName, Ds=test_ds)# dictionnary of ids
+        prediction(best_model, args.DatasetName, ids ,test_loader, args.anatomy_target, args.output_2_save, device)
+        del best_model, test_loader, ids
 

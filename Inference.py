@@ -17,54 +17,62 @@ import  nibabel                 as nib
 from    monai.transforms        import AsDiscrete, Activations, EnsureType, Compose
 from    utils                   import make_dir, assessment, print_ods
 from    monai.data              import decollate_batch
-from    utils                   import Extract_Ids_From_Dic
+from    utils                   import Extract_Ids_From_DS
 from    ipdb                    import set_trace
 import  skimage.transform       as skTrans
 from    scipy.ndimage           import zoom
-
+from    utils                   import LoadDataSetDic
 
 post_trans  = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(threshold=0.5)])
 
-def prediction(model, datset_name, ids, test_loader, anatomy_target, output, device, cv = False):
-    
-    if datset_name      =="VEELA":
-        from data_dic import VEELA_DIC
-        info_dict = VEELA_DIC(ids=ids).data_dict
-    elif datset_name    =="IRCAD":
-        from data_dic import IRCAD_DIC
-        info_dict = IRCAD_DIC(ids=ids).data_dict
-    else:
-        raise ValueError("Check the name of datset ;)")
+def prediction(model, dataset_names, ids, loader, anatomy_target, output, device, cv = False):
 
-    make_dir(output+'/prediction')
-    make_dir(output+'/prediction/nii_visualization')
-    scores    = np.zeros((len(ids),7), dtype = np.float)
-    itr       = iter(test_loader)
     model.eval()
-    for index, id_ in enumerate(tqdm.tqdm(ids)):
-        
-        logging.info('Exam N°: {}'.format(id_))
-        with torch.no_grad():
-            test_data = next(itr)
-            val_images, val_labels = test_data["image"].to(device), test_data["label"].to(device)
-            pred    = model(val_images)
-            pred    = post_trans(decollate_batch(pred))
-        pred        = pred[0].squeeze().cpu().numpy()
-        
-        Gt_Vol, pred, spacing   = Reshape_Pred_2_Original_Volume_VEELA(info_dict, index, anatomy_target, pred, output)
-        logging.info('Calculating metrics for exam N°: {}'.format(id_))
-        scores[index,:]         = assessment(pred, Gt_Vol, spacing)
-        del Gt_Vol, pred
-        logging.info(f'''dice for exam {id_}: dice: {scores[index,0]}''')
-        
-    print_ods(scores, ids, output, '/prediction/overview-results-all.ods')
+    model.multi_domain_par['state']=False
     if cv:
-        return np.mean(scores,0)
+        MEANS={}
+    for idx, dataset_name in enumerate(dataset_names):
+        model.multi_domain_par["domain_id"]=idx
+        
+        make_dir(output+ '/prediction-'+ dataset_name)
+        make_dir(output+ '/prediction-'+ dataset_name +'/nii_visualization')
+        
+        info_dict   = LoadDataSetDic(dataset_name, ids[dataset_name])
+        test_loader = loader[idx]
+
+        scores    = np.zeros((len(ids[dataset_name]),7), dtype = np.float)
+        itr       = iter(test_loader)
+
+        for index, id_ in tqdm.tqdm(enumerate(ids[dataset_name])):
+            
+            logging.info('Exam N°: {}'.format(id_))
+            with torch.no_grad():
+                test_data = next(itr)
+                val_images, val_labels = test_data["image"].to(device), test_data["label"].to(device)
+                pred    = model(val_images)
+                pred    = post_trans(decollate_batch(pred))
+            pred        = pred[0].squeeze().cpu().numpy()
+            
+            Gt_Vol, pred, spacing   = Reshape_Pred_2_Original_Volume_VEELA(dataset_name, info_dict, index, anatomy_target[dataset_name], pred, output)
+            logging.info('Calculating metrics for exam N°: {}'.format(id_))
+            scores[index,:]         = assessment(pred, Gt_Vol, spacing)
+            del Gt_Vol, pred
+            logging.info(f'''dice for exam {id_}: dice: {scores[index,0]}''')
+            
+        print_ods(scores, ids[dataset_name], output, '/prediction-'+ dataset_name +'/overview-results-all.ods')
+
+        if cv:
+            MEANS[dataset_name]=np.mean(scores,0)
+    if cv:
+        return MEANS
     else:
         return None
 
-def Reshape_Pred_2_Original_Volume_VEELA(info_dict, idx, anatomy_target, pred, output):
-    output+= '/prediction/nii_visualization'
+def Reshape_Pred_2_Original_Volume_VEELA(datset_name, info_dict, idx, anatomy_target, pred, output):
+
+    output+= '/prediction-'+datset_name+'/nii_visualization'
+
+    anatomy_target=[anatomy_target]
     anatomy_target.append('VE')
     for Volume_of_interest in anatomy_target:
         path    = info_dict[Volume_of_interest][idx]

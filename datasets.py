@@ -102,7 +102,7 @@ class VEELA_Dataset(Randomizable, CacheDataset):
             self.indices    = indices[train_length+val_length::]
         else:
             raise ValueError(f"Unsupported section: {self.section}, ""available options are ['training', 'validation', 'test'].")
-
+        self.indices.sort()
         return [datalist[i] for i in self.indices]
 
 class IRCAD_Dataset(Randomizable, CacheDataset):
@@ -185,7 +185,7 @@ class IRCAD_Dataset(Randomizable, CacheDataset):
             self.indices    = indices[train_length+val_length::]
         else:
             raise ValueError(f"Unsupported section: {self.section}, ""available options are ['training', 'validation', 'test'].")
-
+        self.indices.sort()
         return [self.datalist[i] for i in self.indices]
 
 def MultiSourceDataset(Datsets: List, dataset_dir: PathLike, section: str, anatomy: Dict, transform: Dict):
@@ -195,11 +195,11 @@ def MultiSourceDataset(Datsets: List, dataset_dir: PathLike, section: str, anato
     DataDict    =  {}
 
     if "VEELA" in Datsets:
-        DataDict["VEELA"]=VEELA_Dataset(dataset_dir=dataset_dir["VEELA"], section=section, anatomy=anatomy["VEELA"], transform=transform[section]["VEELA"])
+        DataDict["VEELA"]=VEELA_Dataset(dataset_dir=dataset_dir["VEELA"], section=section, anatomy=anatomy["VEELA"], transform=transform["validation" if section in ["validation", "test"]  else section]["VEELA"])
     else:
         raise ValueError("VEELA don't exist in datsets list")
     if "IRCAD" in Datsets:
-        DataDict["IRCAD"]=IRCAD_Dataset(dataset_dir=dataset_dir["IRCAD"], section=section, anatomy=anatomy["IRCAD"], transform=transform[section]["IRCAD"])
+        DataDict["IRCAD"]=IRCAD_Dataset(dataset_dir=dataset_dir["IRCAD"], section=section, anatomy=anatomy["IRCAD"], transform=transform["validation" if section in ["validation", "test"]  else section]["IRCAD"])
     else:
         raise ValueError("IRCAD don't exist in datsets list")
 
