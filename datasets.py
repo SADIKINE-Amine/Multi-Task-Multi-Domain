@@ -21,8 +21,8 @@ class VEELA_Dataset(Randomizable, CacheDataset):
         cache_rate: float = 1.0,
         num_workers: int = 4):
 
-        if not os.path.isdir(dataset_dir):
-            raise ValueError("Root directory dataset_dir must be a directory.")
+        # if not os.path.isdir(dataset_dir):
+        #     raise ValueError("Root directory dataset_dir must be a directory.")
         self.section    = section
         self.val_frac   = val_frac
         self.test_frac  = test_frac
@@ -94,6 +94,8 @@ class VEELA_Dataset(Randomizable, CacheDataset):
         val_length      = int(length*self.val_frac)
         test_length     = int(length*self.test_frac)
 
+        set_trace()
+
         if self.section     == "training":
             self.indices    = indices[:train_length]
         elif self.section   == "validation":
@@ -119,8 +121,8 @@ class IRCAD_Dataset(Randomizable, CacheDataset):
         cache_rate: float   = 1.0,
         num_workers: int    = 4):
 
-        if not os.path.isdir(dataset_dir):
-            raise ValueError("Root directory dataset_dir must be a directory.")
+        # if not os.path.isdir(dataset_dir):
+        #     raise ValueError("Root directory dataset_dir must be a directory.")
         self.section    = section
         self.val_frac   = val_frac
         self.test_frac  = test_frac
@@ -205,8 +207,45 @@ def MultiSourceDataset(Datsets: List, dataset_dir: PathLike, section: str, anato
 
     return ConcatDataset([DataDict[Datsets_name] for Datsets_name in Datsets])
 
+def MultiSourceCVDataset(Datsets: List, dataset_dir: Dict, anatomy: Dict, transform: Dict, nfolds: int):
+    # we return same order of dataset names in list
+
+    from torch.utils.data.dataset import ConcatDataset
+    from  monai.apps              import CrossValidation
+    from pathlib                  import Path
+
+    DataDict    =  {}
+    if "VEELA" in Datsets:
+        DataDict["VEELA"]=CrossValidation(dataset_cls=VEELA_Dataset, anatomy=anatomy["VEELA"], dataset_dir=dataset_dir["VEELA"], section="training", transform=transform["training"]["VEELA"], seed=0, nfolds=nfolds)
+    else:
+        raise ValueError("VEELA don't exist in datsets list")
+    
+    if "IRCAD" in Datsets:
+        DataDict["IRCAD"]=CrossValidation(dataset_cls=IRCAD_Dataset, anatomy=anatomy["IRCAD"], dataset_dir=dataset_dir["IRCAD"], section="training", transform=transform["training"]["IRCAD"], seed=0, nfolds=nfolds)
+    else:
+        raise ValueError("IRCAD don't exist in datsets list")
+
+    return [DataDict[Datsets_name] for Datsets_name in Datsets]
 
 
+def GetMultiSourceCVDataset(Datsets: List, MultiSourceCVDataset: List, folds: List, tr_folds: List, itr: int, section: str, *args, **kwargs):
+    
+    transform=kwargs.get('transform', Optional[Dict])
+    from torch.utils.data.dataset import ConcatDataset
+    
+    DataDict    =  {}
+
+    if section=="training":
+        for idx, MultiCVDataset in enumerate(MultiSourceCVDataset):
+            DataDict[Datsets[idx]] = MultiCVDataset.get_dataset(folds=tr_folds[itr])
+
+    elif section=="validation":
+        for idx, MultiCVDataset in enumerate(MultiSourceCVDataset):
+            DataDict[Datsets[idx]] = MultiCVDataset.get_dataset(folds=itr, transform=transform[section][Datsets[idx]])
+    else:
+        raise ValueError("training or validation in GetMultiSourceCVDataset are supported")
+
+    return ConcatDataset([DataDict[Datsets_name] for Datsets_name in Datsets])
 
 
 

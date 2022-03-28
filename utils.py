@@ -1,20 +1,16 @@
 import  torch
 import  os
-from    monai.losses        import  DiceLoss, GeneralizedDiceLoss, DiceCELoss
 from    monai.metrics       import  DiceMetric
 from    monai.transforms    import  AsDiscrete
 import  medpy.metric.binary
 import  numpy               as      np
-import  nibabel             as      nib
 from    ipdb                import  set_trace
 from    monai.data          import  decollate_batch
 from    monai.metrics       import  DiceMetric
 from    monai.transforms    import  AsDiscrete, Activations, EnsureType, Compose
 import  matplotlib.pyplot   as      plt
-from    scipy.ndimage       import  zoom
 from    tqdm                import  tqdm
 import  logging
-from    clDice.cldice       import soft_dice_cldice
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
@@ -41,7 +37,6 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
             inputs, labels  = batch_data["image"].to(device), batch_data["label"].to(device)
             optimizer.zero_grad()
             outputs         = model(inputs)
-            # set_trace()
             loss            = MultiDomainLossF(loss_function, outputs, labels)
             loss.backward()
             optimizer.step()
@@ -135,7 +130,85 @@ def Plot_Curves(epoch_loss_values, epoch_val_loss_values, metric_values, output_
     plt.savefig(output_2_save+'/'+'Val_dices.png')
     plt.close()
 
-def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target='por', size=(96,96,96), Path2Save="/home/sadikine/data/PreVEELA"):
+# def PreprocessAndSave(DatasetName= "VEELA", key_target='por', size=(96,96,96), Path2Save="/home/sadikine/data/PreVEELA")
+#     # Take original volumes pre-process them and saved them to a new directory
+#     if DatasetName in ["IRCAD", "VEELA"]:
+#         Genarate_LBBV_Dataset(DatasetName=DatasetName, key_target=key_target, size=size, Path2Save=Path2Save)
+#     else:
+
+
+# def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target='por', size=(96,96,96), spacing=(1,1,1), Path2Save="/home/sadikine/data/PreVEELA"):
+#     """
+#     LBBV:Liver Bounding Box Volume
+#     Read volumes of interest after applying a bounding box around the liver as nii file.
+#     Resizing with a specific size 
+#     Save the vollume as nii file
+#     ===================================================================================
+#     DatasetName     : VEELA or IRCAD
+#     key_target      : keys of segementation target (Por,Hep)
+#     """
+#     from  monai.transforms.spatial.array import Spacing
+#     import  nibabel             as      nib
+#     from    scipy.ndimage       import  zoom
+
+#     info_dict = LoadDataSetDic(DataName=DatasetName)
+
+
+
+#     key_target=[key_target]
+#     key_target.append('VE')
+#     make_dir(Path2Save)
+#     logging.info("Genarating Liver Bounding Box Volume for {} dataset...".format(DatasetName))
+    
+#     for Volume_of_interest in key_target:
+#         logging.info("Genarating {} volumes".format(Volume_of_interest))
+#         for idx, path in tqdm(enumerate(info_dict[Volume_of_interest])):
+            
+#             nii_obj = nib.as_closest_canonical(nib.load(path))
+
+#             if spacing!=None and spacing!=(nii_obj.get_qform()[0,0], nii_obj.get_qform()[1,1], nii_obj.get_qform()[2,2]):
+
+#                 Vol     = np.expand_dims(nii_obj.get_fdata(),axis=[0,1])
+#                 if Volume_of_interest=='VE':
+#                     CT_to_pixdim = Spacing(pixdim=np.diag(spacing), mode="bilinear", padding_mode="zeros", dtype=nii_obj.get_fdata().dtype, image_only=True)
+#                     Vol     = CT_to_pixdim(Vol)
+#                 else:
+#                     gt_to_pixdim = Spacing(pixdim=np.diag(spacing), mode="nearest", padding_mode="zeros", dtype=nii_obj.get_fdata().dtype, image_only=True)
+#                     Vol     = gt_to_pixdim(Vol)
+#                 cur_spac=nii_obj.get_qform()
+#                 cur_spac[0][0]=spacing[0]; cur_spac[1][1]=spacing[1]; cur_spac[2][2]=spacing[2]
+#                 nii_obj.set_qform(cur_spac)
+#                 Vol = np.squeeze(Vol)
+#             else:
+#                 Vol     = nii_obj.get_fdata()
+            
+#             # 3D indexing volume_images
+#             Vol = Vol[
+#                 info_dict['Liver coordinates'][idx][0]:info_dict['Liver coordinates'][idx][1],
+#                 info_dict['Liver coordinates'][idx][2]:info_dict['Liver coordinates'][idx][3],
+#                 info_dict['Liver coordinates'][idx][4]:info_dict['Liver coordinates'][idx][5]
+#             ]
+#             if Vol.shape[2]<size[2]:
+#                 arr   = np.zeros((Vol.shape[0],Vol.shape[1],size[2]), dtype = Vol.dtype)
+#                 arr[:,:,:Vol.shape[2]] = Vol
+#                 Vol       = arr
+#                 del arr
+#                 scale     = (size[0]/Vol.shape[0], size[1]/Vol.shape[1], 1.)
+#             else:
+#                 scale     = (size[0]/Vol.shape[0], size[1]/Vol.shape[1], size[2]/Vol.shape[2])
+#             #scale             = (size[0]/Vol.shape[0], size[1]/Vol.shape[1], size[2]/Vol.shape[2])
+#             if Volume_of_interest=='VE':
+#                 Vol           = zoom(Vol, scale, order=3)
+#                 nii_Vol       = nib.Nifti1Image(Vol, nii_obj.affine, nii_obj.header)
+#                 nib.save(nii_Vol, Path2Save+'/'+ os.path.basename(path))
+#             else:
+#                 Vol[np.where(Vol != 0)]   = 1
+#                 Vol           = zoom(Vol, scale, order=0)
+#                 nii_Vol       = nib.Nifti1Image(Vol, nii_obj.affine, nii_obj.header)
+#                 nib.save(nii_Vol, Path2Save+'/'+ os.path.basename(path))
+#     logging.info("End of generation =D")
+
+def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target='por', size=(96,96,96), spacing=(1,1,1), Path2Save="/home/sadikine/data/PreVEELA"):
     """
     LBBV:Liver Bounding Box Volume
     Read volumes of interest after applying a bounding box around the liver as nii file.
@@ -145,39 +218,61 @@ def Genarate_LBBV_Dataset(DatasetName= "VEELA", key_target='por', size=(96,96,96
     DatasetName     : VEELA or IRCAD
     key_target      : keys of segementation target (Por,Hep)
     """
-    info_dict = LoadDataSetDic(DatasetName)
+    from  monai.transforms.spatial.array import Spacing, Resize, Rotate
+    import  nibabel             as      nib
+    from    scipy.ndimage       import  rotate
+
+    info_dict = LoadDataSetDic(DataName=DatasetName)
+
+
 
     key_target=[key_target]
     key_target.append('VE')
     make_dir(Path2Save)
     logging.info("Genarating Liver Bounding Box Volume for {} dataset...".format(DatasetName))
+    
     for Volume_of_interest in key_target:
         logging.info("Genarating {} volumes".format(Volume_of_interest))
         for idx, path in tqdm(enumerate(info_dict[Volume_of_interest])):
+            
             nii_obj = nib.as_closest_canonical(nib.load(path))
             Vol     = nii_obj.get_fdata()
-            # 3D indexing volume_images
+
+            if spacing!=None and spacing!=(nii_obj.get_qform()[0,0], nii_obj.get_qform()[1,1], nii_obj.get_qform()[2,2]):
+                Vol = np.expand_dims(Vol,axis=[0,1])
+                
+                if Volume_of_interest=='VE':
+                    CT_to_pixdim = Spacing(pixdim=np.diag(spacing), mode="bilinear", padding_mode="zeros", dtype=nii_obj.get_fdata().dtype, image_only=True)
+                    Vol     = CT_to_pixdim(Vol)
+                    del CT_to_pixdim
+                else:
+                    gt_to_pixdim = Spacing(pixdim=np.diag(spacing), mode="nearest", padding_mode="zeros", dtype=nii_obj.get_fdata().dtype, image_only=True)
+                    Vol     = gt_to_pixdim(Vol)
+                    del gt_to_pixdim
+
+                cur_spac=nii_obj.get_qform()
+                cur_spac[0][0]=spacing[0]; cur_spac[1][1]=spacing[1]; cur_spac[2][2]=spacing[2]
+                nii_obj.set_qform(cur_spac)
+                Vol = np.squeeze(Vol)
+            
+            # Crop around the liver
             Vol = Vol[
                 info_dict['Liver coordinates'][idx][0]:info_dict['Liver coordinates'][idx][1],
                 info_dict['Liver coordinates'][idx][2]:info_dict['Liver coordinates'][idx][3],
                 info_dict['Liver coordinates'][idx][4]:info_dict['Liver coordinates'][idx][5]
             ]
-            if Vol.shape[2]<size[2]:
-                arr   = np.zeros((Vol.shape[0],Vol.shape[1],size[2]), dtype = Vol.dtype)
-                arr[:,:,:Vol.shape[2]] = Vol
-                Vol       = arr
-                del arr
-                scale     = (size[0]/Vol.shape[0], size[1]/Vol.shape[1], 1.)
-            else:
-                scale     = (size[0]/Vol.shape[0], size[1]/Vol.shape[1], size[2]/Vol.shape[2])
-            #scale             = (size[0]/Vol.shape[0], size[1]/Vol.shape[1], size[2]/Vol.shape[2])
+
             if Volume_of_interest=='VE':
-                Vol           = zoom(Vol, scale, order=3)
+                resize        = Resize(size,  mode="trilinear", align_corners=False)
+                Vol           = resize(np.expand_dims(Vol, axis=0))
+                Vol = np.squeeze(Vol)
                 nii_Vol       = nib.Nifti1Image(Vol, nii_obj.affine, nii_obj.header)
                 nib.save(nii_Vol, Path2Save+'/'+ os.path.basename(path))
             else:
-                Vol[np.where(Vol != 0)]   = 1
-                Vol           = zoom(Vol, scale, order=0)
+                Vol[np.where(Vol != 0)] = 1
+                resize        = Resize(size,  mode="nearest")
+                Vol           = resize(np.expand_dims(Vol, axis=0))
+                Vol = np.squeeze(Vol)
                 nii_Vol       = nib.Nifti1Image(Vol, nii_obj.affine, nii_obj.header)
                 nib.save(nii_Vol, Path2Save+'/'+ os.path.basename(path))
     logging.info("End of generation =D")
@@ -265,13 +360,13 @@ def LoadDataSetDic(DataName, ids=[]):
     if DataName      =="VEELA":
         from data_dic import VEELA_DIC
         if ids==[]:
-            info_dict = VEELA_DIC.data_dict
+            info_dict = VEELA_DIC().data_dict
         else:
             info_dict = VEELA_DIC(ids=ids).data_dict
     elif DataName    =="IRCAD":
         from data_dic import IRCAD_DIC
         if ids==[]:
-            info_dict = IRCAD_DIC.data_dict
+            info_dict = IRCAD_DIC().data_dict
         else:
             info_dict = IRCAD_DIC(ids=ids).data_dict
     else:
@@ -297,16 +392,21 @@ def Save_Experement_Info(args):
     file.close()
 
 def LossFunction(loss_name="DiceLoss"):
+
     if loss_name=="DiceLoss":
+        from   monai.losses  import  DiceLoss
         return DiceLoss(sigmoid=True)
 
     elif loss_name=="GeneralizedDiceLoss":
+        from   monai.losses  import  GeneralizedDiceLoss
         return GeneralizedDiceLoss(sigmoid=True)
     
     elif loss_name=="DiceCELoss":
+        from   monai.losses  import  DiceCELoss
         return DiceCELoss(sigmoid=True)
 
     elif loss_name=="DiceCldiceLoss":
+        from    clDice.cldice       import soft_dice_cldice
         return soft_dice_cldice(iter_=5, alpha=0.3, sigmoid=True)
     
     else:

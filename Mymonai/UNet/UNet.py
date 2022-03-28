@@ -20,7 +20,8 @@ from ipdb import set_trace
 from sys import path
 from os import getcwd
 
-path.append(getcwd()+'/Mymonai/UNet')
+#/homes/asadikine/code/Multi-Task-Multi-Domain/Mymonai/UNet
+path.insert(0, getcwd()+'/Mymonai/UNet')
 
 from networks_blocks_convolutions import Convolution, ResidualUnit
 

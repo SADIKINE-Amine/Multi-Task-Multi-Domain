@@ -1,6 +1,6 @@
 import  argparse
 
-ANATOMIES={"IRCAD":"por","VEELA":"por"}
+ANATOMIES={"VEELA":"por","IRCAD":"por"}
 DATASER_DIR={"IRCAD":"/home/sadikine/data/Pre_IRCAD","VEELA":"/home/sadikine/data/Pre_VEELA"}
 MULTI_DOMAIN={"num_domains": 2, "state": True, "domain_id": 1}# state True for train and validation/ False for testing if Flase need to choose which domain_id
 
@@ -26,7 +26,7 @@ def get_args():
 
     parser.add_argument('-ls',      '--loss_name',          type=str,       default="DiceCldiceLoss",       dest='loss_name')# GeneralizedDiceLoss, DiceLoss, DiceCELoss, DiceCldiceLoss
        
-    parser.add_argument('-cv',      '--cross_val',          type=bool,      default=False,                  dest='cross_val')
+    parser.add_argument('-cv',      '--cross_val',          type=bool,      default=True,                  dest='cross_val')
 
     parser.add_argument('-nf',      '--NBFolds',            type=int,       default=5,                      dest='NBFolds')
 
@@ -38,7 +38,7 @@ def get_args():
         
     parser.add_argument('-de',      '--decay',              type=float,     default=0.,                     dest='decay')
     
-    parser.add_argument('-s',       '--spatial_size',       type=int,       default=(256, 256, 128),        dest='spatial_size')
+    parser.add_argument('-s',       '--spatial_size',       type=int,       default=(96, 96, 96),        dest='spatial_size')
 
     parser.add_argument('-sp',      '--spacing',            type=list,      default=None,                   dest='spacing')
     

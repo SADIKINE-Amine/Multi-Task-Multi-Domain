@@ -101,6 +101,7 @@ if __name__ == "__main__":
     x=torch.rand(4,1,5,5,5)
     #x=torch.cat((y,y),0)
     # print(x)
+    set_trace()
     N=get_norm_layer(name="batch",spatial_dims=3, channels=1, multi_domain_par={"num_domains": 2, "state": True, "domain_id": 1})
     N(x)
     # set_trace()
