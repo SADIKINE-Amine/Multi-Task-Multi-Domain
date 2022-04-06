@@ -10,15 +10,18 @@ from    monai.metrics       import  DiceMetric
 from    monai.transforms    import  AsDiscrete, Activations, EnsureType, Compose
 import  matplotlib.pyplot   as      plt
 from    tqdm                import  tqdm
+from    monai.losses        import  ContrastiveLoss
 import  logging
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-dice_metric = DiceMetric(include_background=True, reduction="mean", get_not_nans=False)
-post_trans  = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(threshold=0.5)])
+dice_metric     = DiceMetric(include_background=True, reduction="mean", get_not_nans=False)
+post_trans      = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(threshold=0.5)])
 
-def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr, epochs, device, spatial_size, output_2_save):
+def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr, epochs, device, spatial_size, output_2_save, batch_size, reg, Lambda):
     optimizer         = torch.optim.Adam(model.parameters(), lr)
+    if reg:
+        Contrastive_Loss = ContrastiveLoss(temperature=0.5, batch_size=int(batch_size/2), reduction='mean')
     val_interval      =  1
     best_metric       = -1
     best_metric_epoch = -1
@@ -36,8 +39,13 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
             step           += 1
             inputs, labels  = batch_data["image"].to(device), batch_data["label"].to(device)
             optimizer.zero_grad()
-            outputs         = model(inputs)
-            loss            = MultiDomainLossF(loss_function, outputs, labels)
+            
+            if reg:
+                outputs, z1, z2 = model(inputs)
+                loss            = MultiDomainLossF(loss_function, outputs, labels) + Lambda*Contrastive_Loss(z1, z2)
+            else:
+                outputs         = model(inputs)
+                loss            = MultiDomainLossF(loss_function, outputs, labels)
             loss.backward()
             optimizer.step()
             # set_trace()

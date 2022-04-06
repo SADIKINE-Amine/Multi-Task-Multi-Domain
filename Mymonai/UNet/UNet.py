@@ -312,19 +312,19 @@ class UNet(nn.Module):
 
 
 
-# if __name__ == "__main__":
-#     from torchsummary import summary
-#     model = UNet(
-#         spatial_dims=3,
-#         in_channels=2,
-#         out_channels=1,
-#         channels=(16, 32, 64),
-#         strides = (2,2),
-#         multi_domain_par={"num_domains": 2, "state": True}
-#     )
-#     x=torch.rand(1,2,96,96,96)
-#     model(x)
-#     set_trace()
+if __name__ == "__main__":
+    from torchsummary import summary
+    model = UNet(
+        spatial_dims=3,
+        in_channels=2,
+        out_channels=1,
+        channels=(16, 32, 64),
+        strides = (2,2),
+        multi_domain_par={"num_domains": 2, "state": True}
+    )
+    x=torch.rand(1,2,96,96,96)
+    model(x)
+    set_trace()
 
 
 
