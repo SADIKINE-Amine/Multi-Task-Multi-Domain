@@ -26,11 +26,15 @@ def get_args():
 
     parser.add_argument('-ls',      '--loss_name',          type=str,       default="DiceCldiceLoss",       dest='loss_name')# GeneralizedDiceLoss, DiceLoss, DiceCELoss, DiceCldiceLoss
        
-    parser.add_argument('-cv',      '--cross_val',          type=bool,      default=True,                  dest='cross_val')
+    parser.add_argument('-cv',      '--cross_val',          type=bool,      default=True,                   dest='cross_val')
+
+    parser.add_argument('-Reg',      '--Reg',               type=bool,      default=True,                   dest='Reg')
+
+    parser.add_argument('-lam',      '--Lambda',            type=int,       default=1e-3,                   dest='Lambda')
 
     parser.add_argument('-nf',      '--NBFolds',            type=int,       default=5,                      dest='NBFolds')
 
-    parser.add_argument('-e',       '--epochs',             type=int,       default=3,                     dest='epochs')
+    parser.add_argument('-e',       '--epochs',             type=int,       default=3,                      dest='epochs')
                 
     parser.add_argument('-b',       '--batch_size',         type=int,       default=2,                      dest='batch_size')
     
@@ -38,7 +42,7 @@ def get_args():
         
     parser.add_argument('-de',      '--decay',              type=float,     default=0.,                     dest='decay')
     
-    parser.add_argument('-s',       '--spatial_size',       type=int,       default=(96, 96, 96),        dest='spatial_size')
+    parser.add_argument('-s',       '--spatial_size',       type=int,       default=(96, 96, 96),           dest='spatial_size')
 
     parser.add_argument('-sp',      '--spacing',            type=list,      default=None,                   dest='spacing')
     

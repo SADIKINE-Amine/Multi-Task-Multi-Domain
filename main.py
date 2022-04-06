@@ -66,7 +66,7 @@ if __name__ == "__main__":
             train_loader    = DataLoader(train_ds, sampler=BatchSchedulerSampler(dataset=train_ds, batch_size=args.batch_size), batch_size=args.batch_size, shuffle=False, num_workers=4, collate_fn=list_data_collate, pin_memory=is_available())
             val_loader      = MultiSourceLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4, collate_fn=list_data_collate)
             model           = Model(args.ModelName, device, args.spatial_size, args.norm, args.multi_domain)
-            # Train(train_loader, train_ds, val_loader, val_ds, model, loss_function, args.lr, args.epochs, device, args.spatial_size, Output2SaveFold)
+            Train(train_loader, train_ds, val_loader, val_ds, model, loss_function, args.lr, args.epochs, device, args.spatial_size, Output2SaveFold, args.batch_size, args.Reg, args.Lambda)
             del train_loader, val_loader, train_ds
 
             #======================================| Test stage |===============================================
