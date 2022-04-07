@@ -10,7 +10,7 @@ from    monai.metrics       import  DiceMetric
 from    monai.transforms    import  AsDiscrete, Activations, EnsureType, Compose
 import  matplotlib.pyplot   as      plt
 from    tqdm                import  tqdm
-from    monai.losses        import  ContrastiveLoss
+from    contrastive         import  ContrastiveLoss
 import  logging
 
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -21,18 +21,21 @@ post_trans      = Compose([EnsureType(), Activations(sigmoid=True), AsDiscrete(t
 def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr, epochs, device, spatial_size, output_2_save, batch_size, reg, Lambda):
     optimizer         = torch.optim.Adam(model.parameters(), lr)
     if reg:
-        Contrastive_Loss = ContrastiveLoss(temperature=0.5, batch_size=int(batch_size/2), reduction='mean')
+        model.return_latent = True
+        Contrastive_Loss = ContrastiveLoss(temperature=0.3, batch_size=int(batch_size/2), reduction='mean')
     val_interval      =  1
     best_metric       = -1
     best_metric_epoch = -1
     epoch_loss_values = list()
     metric_values     = list()
     epoch_val_loss_values    = list()
+
     for epoch in range(epochs):
         logging.info('='*20)
         logging.info(f'epoch {epoch + 1}/{epochs}')
         model.train()
         model.multi_domain_par['state']=True
+
         epoch_loss  = 0
         step        = 0
         for batch_data in train_loader:
@@ -41,8 +44,9 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
             optimizer.zero_grad()
             
             if reg:
-                outputs, z1, z2 = model(inputs)
-                loss            = MultiDomainLossF(loss_function, outputs, labels) + Lambda*Contrastive_Loss(z1, z2)
+                outputs, z      = model(inputs)
+                loss            = MultiDomainLossF(loss_function, outputs, labels) + Lambda*Contrastive_Loss(z[0], z[1])
+                #print(Contrastive_Loss(z[0], z[1]))
             else:
                 outputs         = model(inputs)
                 loss            = MultiDomainLossF(loss_function, outputs, labels)
@@ -55,7 +59,7 @@ def Train(train_loader, train_ds, val_loader, val_ds, model , loss_function, lr,
         epoch_loss_values.append(epoch_loss)
         logging.info(f"epoch {epoch + 1} average loss: {epoch_loss:.4f}")
         if (epoch + 1) % val_interval == 0:
-            eval_metrics        = eval_net(model, val_loader, loss_function, device)
+            eval_metrics        = eval_net(model, val_loader, loss_function, batch_size, reg, Lambda, device)
             metric              = eval_metrics['metric']
             epoch_val_loss      = eval_metrics['loss']
             epoch_val_loss_values.append(epoch_val_loss)
@@ -86,26 +90,34 @@ def MultiDomainLossF(loss_function, outputs, labels):
         Loss+=loss_function(output, labels[a:b,:,:,:,:])
     return Loss/len(outputs)
 
-def eval_net(model,loader, loss_function, device):
+def eval_net(model,loader, loss_function, batch_size, reg, Lambda, device):
     model.eval()
+    if reg:
+        Contrastive_Loss = ContrastiveLoss(temperature=0.5, batch_size=int(batch_size/2), reduction='mean')
+    model.return_latent = True
     model.multi_domain_par['state']=False
-    epoch_loss  = 0
-    step        = 0
-    T_metric    = 0
-    T_epoch_loss= 0
+    epoch_loss      = 0
+    epoch_Regloss   = 0
+    step            = 0
+    T_metric        = 0
+    T_epoch_loss    = 0
+    T_epoch_Regloss = 0
     with torch.no_grad():
         for idx, Signle_Source_loader in enumerate(loader):
             model.multi_domain_par["domain_id"]=idx
             for data in Signle_Source_loader:
                 step           += 1
                 images, labels  = data["image"].to(device), data["label"].to(device)
-                outputs         = model(images)
-                loss            = loss_function(outputs, labels)
-                outputs         = [post_trans(i) for i in decollate_batch(outputs)]
-                epoch_loss     += loss.item()
+                outputs     = model(images)
+                loss        = loss_function(outputs, labels)
+                outputs     = [post_trans(i) for i in decollate_batch(outputs)]
+                epoch_loss += loss.item()
                 # compute metric for current iteration
                 dice_metric(y_pred=outputs, y=labels)
             epoch_loss /= step
+            if reg:
+                epoch_Regloss /= step
+                T_epoch_Regloss += epoch_Regloss
             # aggregate the final mean dice result
             metric = dice_metric.aggregate().item()
             # reset the status for next validation round
@@ -113,6 +125,7 @@ def eval_net(model,loader, loss_function, device):
             T_metric        += metric
             T_epoch_loss    += epoch_loss
     return {'metric':T_metric/len(loader), 'loss':T_epoch_loss/len(loader)}
+
 
 def Plot_Curves(epoch_loss_values, epoch_val_loss_values, metric_values, output_2_save):
     

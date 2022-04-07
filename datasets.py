@@ -94,8 +94,6 @@ class VEELA_Dataset(Randomizable, CacheDataset):
         val_length      = int(length*self.val_frac)
         test_length     = int(length*self.test_frac)
 
-        set_trace()
-
         if self.section     == "training":
             self.indices    = indices[:train_length]
         elif self.section   == "validation":

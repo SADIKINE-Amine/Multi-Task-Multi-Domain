@@ -22,11 +22,11 @@ def get_args():
 
     parser.add_argument('-lbb',     '--generate_lbb',       type=bool,      default=False,                  dest='generate_lbb')
 
-    parser.add_argument('-n',       '--ModelName',          type=str,       default="Unet",                 dest='ModelName')
+    parser.add_argument('-n',       '--ModelName',          type=str,       default="BasicUNet",            dest='ModelName')
 
     parser.add_argument('-ls',      '--loss_name',          type=str,       default="DiceCldiceLoss",       dest='loss_name')# GeneralizedDiceLoss, DiceLoss, DiceCELoss, DiceCldiceLoss
        
-    parser.add_argument('-cv',      '--cross_val',          type=bool,      default=True,                   dest='cross_val')
+    parser.add_argument('-cv',      '--cross_val',          type=bool,      default=False,                  dest='cross_val')
 
     parser.add_argument('-Reg',      '--Reg',               type=bool,      default=True,                   dest='Reg')
 

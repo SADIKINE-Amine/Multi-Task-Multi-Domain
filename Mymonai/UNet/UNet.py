@@ -8,17 +8,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import warnings
-from typing import Optional, Sequence, Tuple, Union, Dict, List
+import  warnings
+from    typing                              import Optional, Sequence, Tuple, Union, Dict, List
 
-import torch
-import torch.nn as nn
-from monai.networks.layers.factories import Act, Norm
-from monai.networks.layers.simplelayers import SkipConnection
-from monai.utils import deprecated_arg
-from ipdb import set_trace
-from sys import path
-from os import getcwd
+import  torch
+import  torch.nn    as nn
+from    monai.networks.layers.factories     import Act, Norm
+from    monai.networks.layers.simplelayers  import SkipConnection
+from    monai.utils                         import deprecated_arg
+from    ipdb                                import set_trace
+from    sys                                 import path
+from    os                                  import getcwd
 
 #/homes/asadikine/code/Multi-Task-Multi-Domain/Mymonai/UNet
 path.insert(0, getcwd()+'/Mymonai/UNet')
@@ -183,6 +183,7 @@ class UNet(nn.Module):
                 upc = c * 2
             else:
                 # the next layer is the bottom so stop recursion, create the bottom layer as the sublock for this layer
+                set_trace()
                 subblock = self._get_bottom_layer(c, channels[1])
                 upc = c + channels[1]
             # print("inc: ", inc)
@@ -311,20 +312,19 @@ class UNet(nn.Module):
             return self.out_layers[self.multi_domain_par["domain_id"]](x)
 
 
-
 if __name__ == "__main__":
     from torchsummary import summary
+    from monai.networks.layers.factories import Norm
+    NORM=Norm.INSTANCE
     model = UNet(
-        spatial_dims=3,
-        in_channels=2,
-        out_channels=1,
-        channels=(16, 32, 64),
-        strides = (2,2),
-        multi_domain_par={"num_domains": 2, "state": True}
-    )
-    x=torch.rand(1,2,96,96,96)
+            spatial_dims=3,
+            in_channels=1,
+            out_channels=[1,1],
+            channels=(16,32,64,128,256),
+            strides = (2,2,2,2),
+            norm= NORM,
+            multi_domain_par={"num_domains": 2, "state": True, "domain_id": 1})
+
+    x=torch.rand(2, 1, 96, 96, 96)
     model(x)
     set_trace()
-
-
-

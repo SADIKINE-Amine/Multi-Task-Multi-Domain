@@ -94,7 +94,7 @@ if __name__ == "__main__":
         val_ds          = MultiSourceDataset(Datsets=args.DatasetName, dataset_dir=args.DataPath, section="validation", anatomy=args.anatomy_target, transform=Deftransforms(args.DatasetName))
         val_loader      = MultiSourceLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4, collate_fn=list_data_collate)
         model           = Model(args.ModelName, device, args.spatial_size, args.norm, args.multi_domain)
-        Train(train_loader, train_ds, val_loader, val_ds, model, loss_function, args.lr, args.epochs, device, args.spatial_size, args.output_2_save)
+        Train(train_loader, train_ds, val_loader, val_ds, model, loss_function, args.lr, args.epochs, device, args.spatial_size, args.output_2_save, args.batch_size, args.Reg, args.Lambda)
         del train_loader, val_loader, train_ds, val_ds
 
         #======================================| Test stage |===================================================
